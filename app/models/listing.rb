@@ -14,7 +14,7 @@ class Listing < ActiveRecord::Base
   validates :host_id, presence: true
 
   before_create :set_host_to_true
-  before_destroy :set_host_to_false
+  after_destroy :set_host_to_false
 
   def average_review_rating
     total_ratings = 0.0
@@ -24,18 +24,29 @@ class Listing < ActiveRecord::Base
     (total_ratings / reviews.length)
   end
 
+  def available?(start_date, end_date)
+    temp = true
+    reservations.each do |res|
+      if included?(res,start_date) || included?(res,end_date)
+        temp = false
+      end
+    end
+    temp
+  end
+
   private
 
+  def included?(res,date)
+    (res.checkin..res.checkout).to_a.include?(date)
+  end
+
   def set_host_to_true
-    host.host = true
-    host.save
+    self.host.update(host: true)
   end
 
   def set_host_to_false
-    user = User.find(host.id)
-    if user.listings.length == 1
-      user.host = false
-      user.save
+    if host.listings.empty?
+      host.update(host: false)
     end
   end
 end
