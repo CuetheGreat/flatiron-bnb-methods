@@ -13,8 +13,8 @@ class Listing < ActiveRecord::Base
   validates :neighborhood, presence: true
   validates :host_id, presence: true
 
-  after_save :update_to_host
-  after_destroy :remove_host
+  before_create :set_host_to_true
+  after_destroy :set_host_to_false
 
   def average_review_rating
     reviews.average(:rating)
@@ -31,13 +31,27 @@ class Listing < ActiveRecord::Base
     flag
   end
 
+  def available?(start_date, end_date)
+    temp = true
+    reservations.each do |res|
+      if included?(res, start_date) || included?(res, end_date)
+        temp = false
+      end
+    end
+    temp
+  end
+
   private
 
-  def update_to_host
+  def included?(res, date)
+    (res.checkin..res.checkout).to_a.include?(date)
+  end
+
+  def set_host_to_true
     self.host.update(host: true)
   end
 
-  def remove_host
+  def set_host_to_false
     if host.listings.empty?
       host.update(host: false)
     end

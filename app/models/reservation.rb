@@ -8,13 +8,14 @@ class Reservation < ActiveRecord::Base
   #   t.datetime "updated_at",                     null: false
   #   t.string   "status",     default: "pending"
   belongs_to :listing
-  belongs_to :guest, :class_name => "User"
+  belongs_to :guest, class_name: "User"
   has_one :review
 
-  validates :checkin, :checkout, presence: true, alllow_nil: false
-  validates :checkout, comparison: { greater_than: :checkin }
-  validate :not_listing_host?
-  validate :availabile?
+  validates :checkin, :checkout, presence: true
+
+  validate :guest_is_not_host
+  validate :listing_availability
+  validate :dates_are_valid
 
   def duration
     (checkin...checkout).to_a.length
@@ -26,11 +27,15 @@ class Reservation < ActiveRecord::Base
 
   private
 
-  def not_listing_host?
-    errors.add(:guest_id, "You are the host of this listing") unless (self.guest.id != listing.host.id)
+  def guest_is_not_host
+    errors.add(:guest, "Host and guest cannot be the same") unless (guest && listing.host) && guest.id != listing.host.id
   end
 
-  def availabile?
-    errors.add(:listing, "Listing is unavailable for these dates") unless listing.available?(checkin, checkout)
+  def listing_availability
+    errors.add(:listing, "This listing is not available for the dates you requested") unless listing.available?(checkin, checkout)
+  end
+
+  def dates_are_valid
+    errors.add(:checkin, "The dates are not in a valid format") unless ((checkin && checkout) && (checkin < checkout))
   end
 end
