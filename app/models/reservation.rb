@@ -1,12 +1,4 @@
 class Reservation < ActiveRecord::Base
-
-  #   t.date     "checkin"
-  #   t.date     "checkout"
-  #   t.integer  "listing_id"
-  #   t.integer  "guest_id"
-  #   t.datetime "created_at",                     null: false
-  #   t.datetime "updated_at",                     null: false
-  #   t.string   "status",     default: "pending"
   belongs_to :listing
   belongs_to :guest, class_name: "User"
   has_one :review

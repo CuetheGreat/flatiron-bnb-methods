@@ -20,17 +20,6 @@ class Listing < ActiveRecord::Base
     reviews.average(:rating)
   end
 
-  def available?(checkin, checkout)
-    flag = true
-    reservations.each do |res|
-      range = (res.checkin...res.checkout).to_a
-      if range.include?(checkin) || range.include?(checkout)
-        flag = false
-      end
-    end
-    flag
-  end
-
   def available?(start_date, end_date)
     temp = true
     reservations.each do |res|
