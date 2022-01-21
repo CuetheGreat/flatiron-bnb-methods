@@ -13,29 +13,33 @@ class Listing < ActiveRecord::Base
   validates :neighborhood, presence: true
   validates :host_id, presence: true
 
-  before_create :set_host_to_true
-  before_destroy :set_host_to_false
+  after_save :update_to_host
+  after_destroy :remove_host
 
   def average_review_rating
-    total_ratings = 0.0
-    reviews.each do |r|
-      total_ratings += r.rating.to_f
+    reviews.average(:rating)
+  end
+
+  def available?(checkin, checkout)
+    flag = true
+    reservations.each do |res|
+      range = (res.checkin...res.checkout).to_a
+      if range.include?(checkin) || range.include?(checkout)
+        flag = false
+      end
     end
-    (total_ratings / reviews.length)
+    flag
   end
 
   private
 
-  def set_host_to_true
-    host.host = true
-    host.save
+  def update_to_host
+    self.host.update(host: true)
   end
 
-  def set_host_to_false
-    user = User.find(host.id)
-    if user.listings.length == 1
-      user.host = false
-      user.save
+  def remove_host
+    if host.listings.empty?
+      host.update(host: false)
     end
   end
 end
